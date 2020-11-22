@@ -1,0 +1,32 @@
+[
+    {
+        "level": "WARNING",
+        "message": "This is your first warning",
+        "receivedAt": "2020-11-14T13: 00: 00.00000Z",
+        "service": "Service A"
+    },
+    {
+        "level": "ERROR",
+        "message": "This is an error",
+        "receivedAt": "2020-11-14T13: 05: 00.00000Z",
+        "service": "Service A"
+    },
+    {
+        "level": "ERROR",
+        "message": "This is an error",
+        "receivedAt": "2020-11-14T13: 05: 00.00000Z",
+        "service": "Service B"
+    },
+    {
+        "level": "WARNING",
+        "message": "This is your second warning",
+        "receivedAt": "2020-11-14T13: 05: 00.00000Z",
+        "service": "Service A"
+    },
+    {
+        "level": "WARNING",
+        "message": "This is your first warning",
+        "receivedAt": "2020-11-14T13: 05: 00.00000Z",
+        "service": "Service C"
+    }
+]
