@@ -2,10 +2,11 @@ import AWS from 'aws-sdk';
 import { nanoid } from 'nanoid'
 import { handleMessages } from './sns-handler';
 import { SNSEvent } from 'aws-lambda/trigger/sns';
-import { DynamoDBTestHelper, createTable, TABLE_NAME, deleteTable } from './test-helper';
+import { createTable, TABLE_NAME, deleteTable } from './test-helper';
 import logMessages from '../test-data/logMessages.json';
+import { DynamoDBTestHelper } from 'dynamodb-local-test-helper';
 
-let dynamoDBTestHelper: DynamoDBTestHelper = new DynamoDBTestHelper();
+const dynamoDBTestHelper: DynamoDBTestHelper = new DynamoDBTestHelper();
 let dynamoDbClient: AWS.DynamoDB;
 let documentClient: AWS.DynamoDB.DocumentClient;
 

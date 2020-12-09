@@ -5,8 +5,9 @@ import { SNSEvent, SNSEventRecord, SNSMessage } from 'aws-lambda/trigger/sns';
 import { ScheduledHandler } from './scheduled-handler';
 import MockDate from 'mockdate';
 import moment from 'moment';
-import { createTable, deleteTable, DynamoDBTestHelper, TABLE_NAME } from './test-helper';
+import { createTable, deleteTable, TABLE_NAME } from './test-helper';
 import logMessages from '../test-data/logMessages.json';
+import { DynamoDBTestHelper } from 'dynamodb-local-test-helper';
 
 let dynamoDbClient: AWS.DynamoDB;
 let documentClient: AWS.DynamoDB.DocumentClient;
