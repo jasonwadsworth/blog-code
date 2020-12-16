@@ -1,0 +1,175 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: Delayed Event Processing
+Resources:
+  DynamoDBTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: delayed-event-processing-part-2
+      AttributeDefinitions:
+        - AttributeName: pk
+          AttributeType: S
+        - AttributeName: sk
+          AttributeType: S
+        - AttributeName: gsi1_pk
+          AttributeType: S
+        - AttributeName: gsi1_sk
+          AttributeType: S
+      BillingMode: PAY_PER_REQUEST
+      StreamSpecification:
+        StreamViewType: 'NEW_AND_OLD_IMAGES'
+      GlobalSecondaryIndexes:
+        - IndexName: gsi1
+          KeySchema:
+            - AttributeName: gsi1_pk
+              KeyType: HASH
+            - AttributeName: gsi1_sk
+              KeyType: RANGE
+          Projection:
+            ProjectionType: ALL
+      KeySchema:
+        - AttributeName: pk
+          KeyType: HASH
+        - AttributeName: sk
+          KeyType: RANGE
+
+  SnsTopic:
+    Type: AWS::SNS::Topic
+
+  SnsHandlerLogGroup:
+    Type: 'AWS::Logs::LogGroup'
+    Properties:
+      LogGroupName: /aws/lambda/delayed-event-processing-part-2-sns-handler
+      RetentionInDays: 3
+
+  SnsHandlerFunction:
+    Type: 'AWS::Lambda::Function'
+    Properties:
+      FunctionName: delayed-event-processing-part-2-sns-handler
+      Handler: src/sns-handler.handler
+      Runtime: nodejs12.x
+      MemorySize: 128
+      Timeout: 300
+      Role: !GetAtt SnsHandlerRole.Arn
+
+  SnsHandlerFunctionPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !GetAtt SnsHandlerFunction.Arn
+      Principal: sns.amazonaws.com
+      SourceArn: !Ref SnsTopic
+
+  SnsEventSubscription:
+    Type: AWS::SNS::Subscription
+    Properties:
+      Endpoint: !GetAtt SnsHandlerFunction.Arn
+      Protocol: lambda
+      TopicArn: !Ref SnsTopic
+
+  SnsHandlerPolicy:
+    Type: AWS::IAM::ManagedPolicy
+    Properties:
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Action:
+              - logs:CreateLogStream
+              - logs:PutLogEvents
+            Resource:
+              - !Sub arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/delayed-event-processing-part-2-sns-handler
+              - !Sub arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/delayed-event-processing-part-2-sns-handler:*
+          - Action:
+              - dynamodb:GetItem
+              - dynamodb:PutItem
+              - dynamodb:UpdateItem
+              - dynamodb:Query
+              - dynamodb:BatchWriteItem
+            Effect: Allow
+            Resource:
+              - !Sub arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/delayed-event-processing-part-2
+              - !Sub arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/delayed-event-processing-part-2/index/*
+
+  SnsHandlerRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action:
+              - sts:AssumeRole
+      ManagedPolicyArns:
+        - !Ref SnsHandlerPolicy
+
+  ScheduledHandlerLogGroup:
+    Type: 'AWS::Logs::LogGroup'
+    Properties:
+      LogGroupName: /aws/lambda/delayed-event-processing-part-2-scheduled-handler
+      RetentionInDays: 3
+
+  ScheduledHandlerFunction:
+    Type: 'AWS::Lambda::Function'
+    Properties:
+      FunctionName: delayed-event-processing-part-2-scheduled-handler
+      Handler: src/scheduled-handler.handler
+      Runtime: nodejs12.x
+      MemorySize: 128
+      Timeout: 300
+      Role: !GetAtt ScheduledHandlerRole.Arn
+
+  ScheduledRule:
+    Type: AWS::Events::Rule
+    Properties:
+      ScheduleExpression: 'rate(1 minute)'
+      Targets:
+        - Arn: !GetAtt ScheduledHandlerFunction.Arn
+          Id: '1'
+
+  ScheduledHandlerFunctionPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !GetAtt ScheduledHandlerFunction.Arn
+      Principal: events.amazonaws.com
+      SourceArn: !GetAtt ScheduledRule.Arn
+
+  ScheduledHandlerPolicy:
+    Type: AWS::IAM::ManagedPolicy
+    Properties:
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Action:
+              - logs:CreateLogStream
+              - logs:PutLogEvents
+            Resource:
+              - !Sub arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/delayed-event-processing-part-2-scheduled-handler
+              - !Sub arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/delayed-event-processing-part-2-scheduled-handler:*
+          - Action:
+              - dynamodb:GetItem
+              - dynamodb:PutItem
+              - dynamodb:UpdateItem
+              - dynamodb:Query
+              - dynamodb:BatchWriteItem
+            Effect: Allow
+            Resource:
+              - !Sub arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/delayed-event-processing-part-2
+              - !Sub arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/delayed-event-processing-part-2/index/*
+
+  ScheduledHandlerRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action:
+              - sts:AssumeRole
+      ManagedPolicyArns:
+        - !Ref ScheduledHandlerPolicy

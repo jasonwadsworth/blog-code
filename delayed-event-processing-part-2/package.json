@@ -1,5 +1,5 @@
 {
-    "name": "delayed-event-processing",
+    "name": "delayed-event-processing-part-2",
     "version": "1.0.0",
     "main": "index.js",
     "license": "MIT",
@@ -7,7 +7,7 @@
         "test": "jest",
         "build": "npm ci && ./node_modules/.bin/tsc && npm ci --production && cp deploy.yaml ./dist/deploy.yaml && rsync -aq --exclude='.*' ./node_modules ./dist && npm ci",
         "package": "npm run build && aws cloudformation package --template-file ./dist/deploy.yaml --output-template-file ./dist/template.yaml",
-        "deploy": "aws cloudformation deploy --stack-name delayed-event-processing --template-file ./dist/template.yaml --capabilities CAPABILITY_IAM"
+        "deploy": "aws cloudformation deploy --stack-name delayed-event-processing-part-2 --template-file ./dist/template.yaml --capabilities CAPABILITY_IAM"
     },
     "devDependencies": {
         "@types/aws-lambda": "^8.10.64",
