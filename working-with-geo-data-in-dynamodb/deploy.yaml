@@ -1,0 +1,204 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: Delayed Event Processing
+Resources:
+  DynamoDBTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: working-with-geo-data-in-dynamodb
+      AttributeDefinitions:
+        - AttributeName: pk
+          AttributeType: S
+        - AttributeName: sk
+          AttributeType: S
+        - AttributeName: gsi1pk
+          AttributeType: S
+        - AttributeName: gsi1sk
+          AttributeType: S
+      BillingMode: PAY_PER_REQUEST
+      StreamSpecification:
+        StreamViewType: 'NEW_AND_OLD_IMAGES'
+      GlobalSecondaryIndexes:
+        - IndexName: gsi1
+          KeySchema:
+            - AttributeName: gsi1pk
+              KeyType: HASH
+            - AttributeName: gsi1sk
+              KeyType: RANGE
+          Projection:
+            ProjectionType: ALL
+      KeySchema:
+        - AttributeName: pk
+          KeyType: HASH
+        - AttributeName: sk
+          KeyType: RANGE
+
+  AddLocationLogGroup:
+    Type: 'AWS::Logs::LogGroup'
+    Properties:
+      LogGroupName: /aws/lambda/working-with-geo-data-in-dynamodb-add-location
+      RetentionInDays: 3
+
+  AddLocationFunction:
+    Type: 'AWS::Lambda::Function'
+    Properties:
+      FunctionName: working-with-geo-data-in-dynamodb-add-location
+      Handler: src/add-location.handler
+      Runtime: nodejs12.x
+      MemorySize: 128
+      Timeout: 30
+      Role: !GetAtt AddLocationRole.Arn
+
+  AddLocationPolicy:
+    Type: AWS::IAM::ManagedPolicy
+    Properties:
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Action:
+              - logs:CreateLogStream
+              - logs:PutLogEvents
+            Resource:
+              - !Sub arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/working-with-geo-data-in-dynamodb-add-location
+              - !Sub arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/working-with-geo-data-in-dynamodb-add-location:*
+          - Action:
+              - dynamodb:PutItem
+            Effect: Allow
+            Resource:
+              - !Sub arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/working-with-geo-data-in-dynamodb
+
+  AddLocationRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action:
+              - sts:AssumeRole
+      ManagedPolicyArns:
+        - !Ref AddLocationPolicy
+
+  QueryLogGroup:
+    Type: 'AWS::Logs::LogGroup'
+    Properties:
+      LogGroupName: /aws/lambda/working-with-geo-data-in-dynamodb-query
+      RetentionInDays: 3
+
+  QueryFunction:
+    Type: 'AWS::Lambda::Function'
+    Properties:
+      FunctionName: working-with-geo-data-in-dynamodb-query
+      Handler: src/query.handler
+      Runtime: nodejs12.x
+      MemorySize: 1024
+      Timeout: 30
+      Role: !GetAtt QueryRole.Arn
+
+  QueryPolicy:
+    Type: AWS::IAM::ManagedPolicy
+    Properties:
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Action:
+              - logs:CreateLogStream
+              - logs:PutLogEvents
+            Resource:
+              - !Sub arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/working-with-geo-data-in-dynamodb-query
+              - !Sub arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/working-with-geo-data-in-dynamodb-query:*
+          - Action:
+              - dynamodb:Query
+            Effect: Allow
+            Resource:
+              - !Sub arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/working-with-geo-data-in-dynamodb
+              - !Sub arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/working-with-geo-data-in-dynamodb/index/*
+
+  QueryRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action:
+              - sts:AssumeRole
+      ManagedPolicyArns:
+        - !Ref QueryPolicy
+
+  ApiGateway:
+    Type: AWS::ApiGatewayV2::Api
+    Properties:
+      Description: API Gateway for Working With Geo Data In DynamoDB
+      Name: working-with-geo-data-in-dynamodb
+      ProtocolType: HTTP
+
+  ApiTriggerQueryLambdaPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !GetAtt QueryFunction.Arn
+      Principal: apigateway.amazonaws.com
+      SourceArn: !Sub 'arn:${AWS::Partition}:execute-api:${AWS::Region}:${AWS::AccountId}:${ApiGateway}/*/*/query'
+
+  ApiTriggerAddLocationLambdaPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !GetAtt AddLocationFunction.Arn
+      Principal: apigateway.amazonaws.com
+      SourceArn: !Sub 'arn:${AWS::Partition}:execute-api:${AWS::Region}:${AWS::AccountId}:${ApiGateway}/*/*/locations'
+
+  ApiQueryLambdaProxyIntegration:
+    Type: AWS::ApiGatewayV2::Integration
+    Properties:
+      Description: Query Lambda Integration
+      ConnectionType: INTERNET
+      IntegrationMethod: POST
+      IntegrationUri: !Sub 'arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${QueryFunction.Arn}/invocations'
+      PayloadFormatVersion: '2.0'
+      ApiId: !Ref ApiGateway
+      IntegrationType: AWS_PROXY
+
+  ApiAddLocationLambdaProxyIntegration:
+    Type: AWS::ApiGatewayV2::Integration
+    Properties:
+      Description: Add Location Lambda Integration
+      ConnectionType: INTERNET
+      IntegrationMethod: POST
+      IntegrationUri: !Sub 'arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${AddLocationFunction.Arn}/invocations'
+      PayloadFormatVersion: '2.0'
+      ApiId: !Ref ApiGateway
+      IntegrationType: AWS_PROXY
+
+  QueryRoute:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId: !Ref ApiGateway
+      RouteKey: 'GET /query'
+      AuthorizationType: NONE
+      Target: !Sub 'integrations/${ApiQueryLambdaProxyIntegration}'
+
+  AddLocationRoute:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId: !Ref ApiGateway
+      RouteKey: 'POST /locations'
+      AuthorizationType: NONE
+      Target: !Sub 'integrations/${ApiAddLocationLambdaProxyIntegration}'
+
+  ApiGatewayStage:
+    Type: AWS::ApiGatewayV2::Stage
+    Properties:
+      ApiId: !Ref ApiGateway
+      AutoDeploy: true
+      StageName: $default
+
+Outputs:
+  ApiGatewayEndpoint:
+    Value: !GetAtt ApiGateway.ApiEndpoint

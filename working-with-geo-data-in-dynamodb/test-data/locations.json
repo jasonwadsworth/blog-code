@@ -1,0 +1,57 @@
+[
+    {
+        "id": "joes-kc-leawood",
+        "name": "Joe's KC BBQ",
+        "streetAddress": "11723 Roe Ave",
+        "locality": "Leawood",
+        "region": "KS",
+        "postalCode": "66211",
+        "country": "USA",
+        "latitude": 38.9153287,
+        "longitude": -94.6393130
+    },
+    {
+        "id": "burnt-end",
+        "name": "Burnt End BBQ",
+        "streetAddress": "11831 Metcalf Ave",
+        "locality": "Overland Park",
+        "region": "KS",
+        "postalCode": "66210",
+        "country": "USA",
+        "latitude": 38.9136949,
+        "longitude": -94.6669146
+    },
+    {
+        "id": "q39-south",
+        "name": "Q39 South",
+        "streetAddress": "11051 Antioch Rd",
+        "locality": "Overland Park",
+        "region": "KS",
+        "postalCode": "66210",
+        "country": "USA",
+        "latitude": 38.9288068,
+        "longitude": -94.6857324
+    },
+    {
+        "id": "brobecks",
+        "name": "Brobeck's BBQ",
+        "streetAddress": "4616 Indian Creek Pkwy",
+        "locality": "Overland Park",
+        "region": "KS",
+        "postalCode": "66207",
+        "country": "USA",
+        "latitude": 38.9358898,
+        "longitude": -94.6382943
+    },
+    {
+        "id": "the-rub",
+        "name": "The Rub BBQ",
+        "streetAddress": "10512 Ridgeview Rd",
+        "locality": "Olathe",
+        "region": "KS",
+        "postalCode": "66061",
+        "country": "USA",
+        "latitude": 38.9379772,
+        "longitude": -94.7981779
+    }
+]

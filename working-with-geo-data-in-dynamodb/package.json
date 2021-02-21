@@ -1,0 +1,33 @@
+{
+    "name": "working-with-geo-data-in-dynamodb",
+    "version": "1.0.0",
+    "main": "index.js",
+    "license": "MIT",
+    "scripts": {
+        "test": "jest",
+        "build": "npm ci && ./node_modules/.bin/tsc && npm ci --production && cp deploy.yaml ./dist/deploy.yaml && rsync -aq --exclude='.*' ./node_modules ./dist && npm ci",
+        "package": "npm run build && aws cloudformation package --template-file ./dist/deploy.yaml --output-template-file ./dist/template.yaml",
+        "deploy": "aws cloudformation deploy --stack-name working-with-geo-data-in-dynamodb --template-file ./dist/template.yaml --capabilities CAPABILITY_IAM"
+    },
+    "devDependencies": {
+        "@types/aws-lambda": "^8.10.64",
+        "@types/chunk": "^0.0.0",
+        "@types/jest": "^26.0.15",
+        "@types/ngeohash": "^0.6.2",
+        "@types/node": "^14.14.6",
+        "@types/uuid": "^8.3.0",
+        "aws-sdk": "^2.787.0",
+        "dynamodb-local-test-helper": "^1.0.3",
+        "get-port": "^5.1.1",
+        "jest": "^26.6.3",
+        "node-docker-api": "^1.1.22",
+        "ts-jest": "^26.4.4",
+        "typescript": "^4.0.5"
+    },
+    "dependencies": {
+        "ngeohash": "^0.6.3"
+    },
+    "engine": {
+        "node": "=12.0"
+    }
+}
